@@ -11,14 +11,14 @@ import smtplib
 from email.mime.text import MIMEText
 
 
-check_interval = 30
+check_interval = 60*5
 
 def main():
     dmv_url = "http://www.dot4.state.pa.us/centers/OnlineServicesCenter.shtml"
     register_url = "https://www.dot4.state.pa.us/exam_scheduling/eslogin.jsp#top?20140405115120899=20140405115120899"
     #print urllib.urlopen(register_url).read()
     ## Load ChromeDriver
-    chromedriver = "/home/shuang/Downloads/chromedriver"
+    chromedriver = "/opt/drivers/chromedriver"
     os.environ["webdriver.chrome.driver"] = chromedriver
     driver = webdriver.Chrome(chromedriver)
     ##  Schedule page to login page
@@ -65,7 +65,7 @@ def main():
             sys.exit(0)
         else:
             print "No exams, sleep!"
-            time.sleep(60)
+            time.sleep(check_interval)
 
 def alert_by_mail(msg):
     from_addr = "tue68607@temple.edu"
