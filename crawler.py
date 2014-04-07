@@ -20,13 +20,6 @@ check_interval = 60*5
 def main():
     dmv_url = "http://www.dot4.state.pa.us/centers/OnlineServicesCenter.shtml"
     register_url = "https://www.dot4.state.pa.us/exam_scheduling/eslogin.jsp#top?20140405115120899=20140405115120899"
-    # alert
-    alert_msg = "Road Test Available at %s\n" % (time.asctime())
-    alert_msg = alert_msg + '''Register online at 'http://www.dot3.state.pa.us/centers/OnlineServicesCenter.shtml'
-Thank you!'''
-    alert_by_mail(alert_msg)
-    print alert_msg
-    sys.exit(0)
 
     #
     prompt = '''
@@ -40,8 +33,11 @@ Thank you!'''
                         help='Running the program on server with virtual display.')
     parser.add_argument('--license', default='license.txt', 
                         help="License file containing driver's number and date of birth on each line")
+    parser.add_argument('--interval', default=5, type=int,
+                        help="Refresh interval in minutes")
     args = parser.parse_args()
-    
+    check_interval = 60 * args.interval
+    #print args, check_interval; return 0 
     # Get login credentials from file
     try:
         fp = open(args.license, 'r')
@@ -50,6 +46,15 @@ Thank you!'''
         sys.exit()
     else:
         credentials = fp.readlines()
+        fp.close()
+    # Get gmail credentials from file
+    try:
+        fp = open('gmail.txt', 'r')
+    except IOError:
+        print 'gmail.txt not found!'
+        sys.exit()
+    else:
+        gmail = fp.readlines()
         fp.close()
     # Run on server
     if args.server:
@@ -90,7 +95,11 @@ Thank you!'''
         #print checked
         if checked != "true":
             columbusCheckbox.click()
-        checked = columbusCheckbox.get_attribute("checked")
+        #checked = columbusCheckbox.get_attribute("checked")
+        west_oak_lane = driver.find_element_by_id("siteName3")
+        if west_oak_lane.get_attribute("checked") != "true":
+            west_oak_lane.click() 
+        #checked = west_oak_lane.get_attribute("checked")
         #print checked
 
         contButt = driver.find_element_by_name("continueButton")
@@ -100,26 +109,31 @@ Thank you!'''
         findError = page_source.find("There are no exams available for the criteria that you selected.")
         if findError == -1: # Available time
             # alert
-            alert_msg = "Road Test Available at %s" % (time.asctime())
-            alert_msg.append('''Register online at 'http://www.dot3.state.pa.us/centers/OnlineServicesCenter.shtml'
-Thank you!''')
-            alert_by_mail(alert_msg)
+            alert_msg = '''Road Test Available at %s
+Register online at 'http://www.dot3.state.pa.us/centers/OnlineServicesCenter.shtml'
+Thank you!
+''' % (time.asctime())
             print alert_msg
+            alert_by_mail(alert_msg, gmail[0].strip(), gmail[1].strip())
             sys.exit(0)
         else:
             print "%s: No exams, sleep!" % (time.asctime())
             time.sleep(check_interval)
 
-def alert_by_mail(alert_msg):
+def alert_by_mail(alert_msg, user, pswd):
     from_addr = "tue68607@temple.edu"
     recipients = ['co.liang.ol@gmail.com', 'qcaisuda@gmail.com']
     to_addr = "co.liang.ol@gmail.com"
     
     msg = MIMEText(alert_msg)
-    msg['Subject'] = "Road Test Available"
+    msg['Subject'] = "%s: Road Test Available" % (time.asctime())
     msg['From'] = from_addr
     msg['To'] = ', '.join(recipients)
-    s = smtplib.SMTP('localhost')
+    s = smtplib.SMTP("smtp.gmail.com",587)
+    s.ehlo()
+    s.starttls()
+    s.ehlo()
+    s.login(user, pswd)
     s.sendmail(from_addr, recipients, msg.as_string())
     s.quit()
 
