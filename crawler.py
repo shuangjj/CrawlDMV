@@ -121,7 +121,29 @@ Thank you!
 ''' % (time.asctime())
             print alert_msg
             alert_by_sms(alert_msg)
-            sys.exit(0)
+            # Preregister
+            testDateChoiceID = ['40108', '40121'] # Columbus BLVD, West OAK Lane
+            if page_souce.find("COLUMBUS BLVD DL CENTER") != -1:
+                columbusDate0 = driver.find_element_by_id(testDateChoiceID[0]+"examChoice0")
+                columbusDate0.click()
+            elif page_souce.find("WEST OAK LANE") != -1:
+                westOakDate0 = driver.find_element_by_id(testDateChoiceID[1]+"examChoice0")
+                westOakDate0.click()
+            else:
+                sys.exit(0)
+            # Daytime telphone number
+            telNumPart1 = driver.find_element_by_name("telNumPart1"); telNumPart1.send_keys('215')
+            telNumPart2 = driver.find_element_by_name("telNumPart2"); telNumPart2.send_keys('301')
+            telNumPart3 = driver.find_element_by_name("telNumPart3"); telNumPart3.send_keys('4655')
+            # Email
+            custEmail = driver.find_element_by_name("custEmail")
+            custEmail.send_keys("co.liang.ol@gmail.com")
+            #
+            reserveRadio = driver.find_element_by_id("nextPageResrve")
+            reserveRadio.click()
+
+            contBut = driver.find_element_by_name("continueButton"); contBut.click()
+
         else:
             print "%s: No exams, sleep!" % (time.asctime())
             time.sleep(check_interval)
