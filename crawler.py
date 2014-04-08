@@ -35,10 +35,12 @@ def main():
                         help="License file containing driver's number and date of birth on each line")
     parser.add_argument('--interval', default=5, type=int,
                         help="Refresh interval in minutes")
+    parser.add_argument('--mailbox', default='126.txt',
+                        help="Email used to send alert message")
     args = parser.parse_args()
     check_interval = 60 * args.interval
     #print args, check_interval; return 0 
-    # Get login credentials from file
+    # Get DMV login credentials from file
     try:
         fp = open(args.license, 'r')
     except IOError:
@@ -47,15 +49,19 @@ def main():
     else:
         credentials = fp.readlines()
         fp.close()
-    # Get gmail credentials from file
+    # Get mail credentials from file
+    '''
     try:
-        fp = open('gmail.txt', 'r')
+        fp = open(args.mailbox, 'r')
     except IOError:
-        print 'gmail.txt not found!'
+        print '%s not found!' % (args.mailbox)
         sys.exit()
     else:
-        gmail = fp.readlines()
+        smtp_mail = fp.readlines()
         fp.close()
+    #alert_by_mail("hello, again", smtp_mail[0].strip(), smtp_mail[1].strip())
+    '''
+    #alert_by_sms("hello"); return
     # Run on server
     if args.server:
         display = Display(visible=0, size=(800, 600))
@@ -114,22 +120,22 @@ Register online at 'http://www.dot3.state.pa.us/centers/OnlineServicesCenter.sht
 Thank you!
 ''' % (time.asctime())
             print alert_msg
-            alert_by_mail(alert_msg, gmail[0].strip(), gmail[1].strip())
+            alert_by_sms(alert_msg)
             sys.exit(0)
         else:
             print "%s: No exams, sleep!" % (time.asctime())
             time.sleep(check_interval)
 
 def alert_by_mail(alert_msg, user, pswd):
-    from_addr = "tue68607@temple.edu"
+    from_addr = user
     recipients = ['co.liang.ol@gmail.com', 'qcaisuda@gmail.com']
-    to_addr = "co.liang.ol@gmail.com"
     
     msg = MIMEText(alert_msg)
     msg['Subject'] = "%s: Road Test Available" % (time.asctime())
     msg['From'] = from_addr
     msg['To'] = ', '.join(recipients)
-    s = smtplib.SMTP("smtp.gmail.com",587)
+    #s = smtplib.SMTP("smtp.gmail.com",587)
+    s = smtplib.SMTP("smtp.126.com",25)
     s.ehlo()
     s.starttls()
     s.ehlo()
@@ -137,6 +143,18 @@ def alert_by_mail(alert_msg, user, pswd):
     s.sendmail(from_addr, recipients, msg.as_string())
     s.quit()
 
+def alert_by_sms(alert_msg):
+    from_addr = 'ubuntu@rungist.com'
+    attip5 = '2153014655@txt.att.net' # @mms.att.net
+    recipients = [attip5, 'co.liang.ol@gmail.com', 'qcaisuda@gmail.com']
+    
+    msg = MIMEText(alert_msg)
+    msg['Subject'] = "%s: Road Test Available" % (time.asctime())
+    msg['From'] = from_addr
+    msg['To'] = ', '.join(recipients)
+    s = smtplib.SMTP("localhost")
+    s.sendmail(from_addr, recipients, msg.as_string())
+    s.quit()
 
    
 
