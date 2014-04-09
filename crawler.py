@@ -123,10 +123,10 @@ Thank you!
             alert_by_sms(alert_msg)
             # Preregister
             testDateChoiceID = ['40108', '40121'] # Columbus BLVD, West OAK Lane
-            if page_souce.find("COLUMBUS BLVD DL CENTER") != -1:
+            if page_source.find("COLUMBUS BLVD DL CENTER") != -1:
                 columbusDate0 = driver.find_element_by_id(testDateChoiceID[0]+"examChoice0")
                 columbusDate0.click()
-            elif page_souce.find("WEST OAK LANE") != -1:
+            elif page_source.find("WEST OAK LANE") != -1:
                 westOakDate0 = driver.find_element_by_id(testDateChoiceID[1]+"examChoice0")
                 westOakDate0.click()
             else:
@@ -143,6 +143,7 @@ Thank you!
             reserveRadio.click()
 
             contBut = driver.find_element_by_name("continueButton"); contBut.click()
+            sys.exit(0)
 
         else:
             print "%s: No exams, sleep!" % (time.asctime())
