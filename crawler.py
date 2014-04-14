@@ -6,6 +6,7 @@ import time
 import urllib
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
 
 import smtplib
 from email.mime.text import MIMEText
@@ -123,21 +124,21 @@ Thank you!
             alert_by_sms(alert_msg)
             # Preregister
             testDateChoiceID = ['40108', '40121'] # Columbus BLVD, West OAK Lane
-            if page_source.find("COLUMBUS BLVD DL CENTER") != -1:
-                columbusDate0 = driver.find_element_by_id(testDateChoiceID[0]+"examChoice0")
-                columbusDate0.click()
-            elif page_source.find("WEST OAK LANE") != -1:
-                westOakDate0 = driver.find_element_by_id(testDateChoiceID[1]+"examChoice0")
-                westOakDate0.click()
+            if page_source.find("COLUMBUS BLVD DL CENTER") != -1 and addDate(testDateChoiceID[0]+"examChoice0"):
+                print "date 0 added for COLUMBUS"
+            #elif page_source.find("WEST OAK LANE") != -1 and addDate(testDateChoiceID[1]+"examChoice0"):
+            #    print "date 0 added for COLUMBUS"
             else:
+                print "No available date"
                 sys.exit(0)
             # Daytime telphone number
-            telNumPart1 = driver.find_element_by_name("telNumPart1"); telNumPart1.send_keys('215')
-            telNumPart2 = driver.find_element_by_name("telNumPart2"); telNumPart2.send_keys('301')
-            telNumPart3 = driver.find_element_by_name("telNumPart3"); telNumPart3.send_keys('4655')
+            telNumPart1 = driver.find_element_by_name("telNumPart1"); telNumPart1.send_keys('267')
+            telNumPart2 = driver.find_element_by_name("telNumPart2"); telNumPart2.send_keys('303')
+            telNumPart3 = driver.find_element_by_name("telNumPart3"); telNumPart3.send_keys('8811')
             # Email
             custEmail = driver.find_element_by_name("custEmail")
-            custEmail.send_keys("co.liang.ol@gmail.com")
+            #custEmail.send_keys("co.liang.ol@gmail.com")
+            custEmail.send_keys("xiali.hei@temple.edu")
             #
             reserveRadio = driver.find_element_by_id("nextPageResrve")
             reserveRadio.click()
@@ -148,6 +149,15 @@ Thank you!
         else:
             print "%s: No exams, sleep!" % (time.asctime())
             time.sleep(check_interval)
+
+def addDate(dateID):
+    try:
+        columbusDate0 = driver.find_element_by_id(dateID)
+        columbusDate0.click()
+    except NoSuchElementException:
+        return False
+    else:
+        return True
 
 def alert_by_mail(alert_msg, user, pswd):
     from_addr = user
@@ -168,8 +178,8 @@ def alert_by_mail(alert_msg, user, pswd):
 
 def alert_by_sms(alert_msg):
     from_addr = 'ubuntu@rungist.com'
-    attip5 = '2153014655@txt.att.net' # @mms.att.net
-    recipients = [attip5, 'co.liang.ol@gmail.com', 'qcaisuda@gmail.com']
+    attip5 = '2673038811@txt.att.net' # @mms.att.net
+    recipients = [attip5, 'xiali.hei@temple.edu']
     
     msg = MIMEText(alert_msg)
     msg['Subject'] = "%s: Road Test Available" % (time.asctime())
