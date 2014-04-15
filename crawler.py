@@ -32,37 +32,33 @@ def main():
     parser = argparse.ArgumentParser(description=prompt, formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('--server', action='store_true',
                         help='Running the program on server with virtual display.')
-    parser.add_argument('--license', default='license.txt', 
-                        help="License file containing driver's number and date of birth on each line")
-    parser.add_argument('--interval', default=5, type=int,
+    parser.add_argument('--reschedule', action='store_true',
+                        help='New schedule or reschedule (default)')
+    parser.add_argument('--interval', metavar="Interval", default=5, type=int,
                         help="Refresh interval in minutes")
-    parser.add_argument('--mailbox', default='126.txt',
-                        help="Email used to send alert message")
+    parser.add_argument('--account', required=True, metavar="AccountInfo", 
+                        help="Text file containing Driver's number, Date of birth, Email and Mobile# each line")
+
     args = parser.parse_args()
+    parser.print_help()
     check_interval = 60 * args.interval
     #print args, check_interval; return 0 
-    # Get DMV login credentials from file
+    # Get account info from credential file
     try:
-        fp = open(args.license, 'r')
+        fp = open(args.account, 'r')
     except IOError:
         print '%s not found!' % (args.license)
         sys.exit()
     else:
-        credentials = fp.readlines()
+        account_info = fp.readlines()
         fp.close()
-    # Get mail credentials from file
-    '''
-    try:
-        fp = open(args.mailbox, 'r')
-    except IOError:
-        print '%s not found!' % (args.mailbox)
-        sys.exit()
-    else:
-        smtp_mail = fp.readlines()
-        fp.close()
-    #alert_by_mail("hello, again", smtp_mail[0].strip(), smtp_mail[1].strip())
-    '''
-    #alert_by_sms("hello"); return
+    # The account information
+    driverNum = account_info[0].strip()
+    DOB = account_info[1].strip()
+    Email = account_info[2].strip()
+    Tel = account_info[3].strip()
+    
+    #print "Driver#: %s, DOB: %s, Email: %s, Tel: %s-%s-%s" % (driverNum, DOB, Email, Tel[0:3], Tel[3:6], Tel[6:])
     # Run on server
     if args.server:
         display = Display(visible=0, size=(800, 600))
@@ -80,21 +76,27 @@ def main():
 
     # Setup driver number
     driverNum_element = driver.find_element_by_id("driverNum")
-    driverNum_element.send_keys(credentials[0].strip())
+    driverNum_element.send_keys(driverNum)
     # Date of Birth
     dob_element = driver.find_element_by_id("dob")
-    dob_element.send_keys(credentials[1].strip())
+    dob_element.send_keys(DOB)
     # Login
     continueButton = driver.find_element_by_name("continueButton")
     continueButton.click()
+    # Check if it is reschedule or not 
+    ps = driver.page_source
+    if ps.find("Reschedule my Class C Driver's Test") != -1:
+        testRescheduleRadio = driver.find_element_by_id("selectedTestReschedule0")
+        testRescheduleRadio.click()
+        print 'Reschedule'
     # Scheduling info page
     includeCounty = driver.find_element_by_id("includeCountyCheckBox")
     checked = includeCounty.get_attribute("checked")
     if checked == "true":
         includeCounty.click()
+
     contButt = driver.find_element_by_name("continueButton")
     contButt.click()
-    #driver.quit()
     while True:
         ## Available times
         columbusCheckbox = driver.find_element_by_id("siteName0")
@@ -121,7 +123,7 @@ Register online at 'http://www.dot3.state.pa.us/centers/OnlineServicesCenter.sht
 Thank you!
 ''' % (time.asctime())
             print alert_msg
-            alert_by_sms(alert_msg)
+            alert_by_sms(alert_msg, Tel, Email)
             # Preregister
             testDateChoiceID = ['40108', '40121'] # Columbus BLVD, West OAK Lane
             if page_source.find("COLUMBUS BLVD DL CENTER") != -1 and addDate(testDateChoiceID[0]+"examChoice0"):
@@ -132,18 +134,19 @@ Thank you!
                 print "No available date"
                 sys.exit(0)
             # Daytime telphone number
-            telNumPart1 = driver.find_element_by_name("telNumPart1"); telNumPart1.send_keys('267')
-            telNumPart2 = driver.find_element_by_name("telNumPart2"); telNumPart2.send_keys('303')
-            telNumPart3 = driver.find_element_by_name("telNumPart3"); telNumPart3.send_keys('8811')
+            telNumPart1 = driver.find_element_by_name("telNumPart1"); telNumPart1.send_keys(Tel[0:3])
+            telNumPart2 = driver.find_element_by_name("telNumPart2"); telNumPart2.send_keys(Tel[3:6])
+            telNumPart3 = driver.find_element_by_name("telNumPart3"); telNumPart3.send_keys(Tel[6:])
             # Email
             custEmail = driver.find_element_by_name("custEmail")
             #custEmail.send_keys("co.liang.ol@gmail.com")
-            custEmail.send_keys("xiali.hei@temple.edu")
+            custEmail.send_keys(Email)
             #
             reserveRadio = driver.find_element_by_id("nextPageResrve")
             reserveRadio.click()
 
             contBut = driver.find_element_by_name("continueButton"); contBut.click()
+            driver.quit()
             sys.exit(0)
 
         else:
@@ -159,27 +162,28 @@ def addDate(dateID):
     else:
         return True
 
-def alert_by_mail(alert_msg, user, pswd):
+def alert_by_mail(alert_msg, Email):
     from_addr = user
-    recipients = ['co.liang.ol@gmail.com', 'qcaisuda@gmail.com']
+    recipients = [Email]
     
     msg = MIMEText(alert_msg)
     msg['Subject'] = "%s: Road Test Available" % (time.asctime())
     msg['From'] = from_addr
     msg['To'] = ', '.join(recipients)
     #s = smtplib.SMTP("smtp.gmail.com",587)
-    s = smtplib.SMTP("smtp.126.com",25)
-    s.ehlo()
-    s.starttls()
-    s.ehlo()
-    s.login(user, pswd)
+    #s = smtplib.SMTP("smtp.126.com",25)
+    #s.ehlo()
+    #s.starttls()
+    #s.ehlo()
+    #s.login(user, pswd)
+    s = smtplib.SMTP("localhost")
     s.sendmail(from_addr, recipients, msg.as_string())
     s.quit()
 
-def alert_by_sms(alert_msg):
+def alert_by_sms(alert_msg, tel, email):
     from_addr = 'ubuntu@rungist.com'
-    attip5 = '2673038811@txt.att.net' # @mms.att.net
-    recipients = [attip5, 'xiali.hei@temple.edu']
+    attip5 = tel+'@txt.att.net' # @mms.att.net
+    recipients = [attip5, email]
     
     msg = MIMEText(alert_msg)
     msg['Subject'] = "%s: Road Test Available" % (time.asctime())
