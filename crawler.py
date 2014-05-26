@@ -100,12 +100,14 @@ def main():
     while True:
         ## Available times
         columbusCheckbox = driver.find_element_by_id("siteName0")
+        #columbusCheckbox = driver.find_element(by='value', value='40108#COLUMBUS BLVD DL CENTER  ')
         checked = columbusCheckbox.get_attribute("checked")
         #print checked
         if checked != "true":
             columbusCheckbox.click()
         #checked = columbusCheckbox.get_attribute("checked")
-        west_oak_lane = driver.find_element_by_id("siteName3")
+        west_oak_lane = driver.find_element_by_id("siteName4")
+        #west_oak_lane = driver.find_element(by='value', value='40121#WEST OAK LANE            ')
         if west_oak_lane.get_attribute("checked") != "true":
             west_oak_lane.click() 
         #checked = west_oak_lane.get_attribute("checked")
@@ -117,44 +119,53 @@ def main():
         
         findError = page_source.find("There are no exams available for the criteria that you selected.")
         if findError == -1: # Available time
-            # alert
-            alert_msg = '''Road Test Available at %s
-Register online at 'http://www.dot3.state.pa.us/centers/OnlineServicesCenter.shtml'
-Thank you!
-''' % (time.asctime())
-            print alert_msg
-            alert_by_sms(alert_msg, Tel, Email)
             # Preregister
+            site = 'UNKNOWN'
             testDateChoiceID = ['40108', '40121'] # Columbus BLVD, West OAK Lane
-            if page_source.find("COLUMBUS BLVD DL CENTER") != -1 and addDate(testDateChoiceID[0]+"examChoice0"):
+            if page_source.find("COLUMBUS BLVD DL CENTER") != -1 and addDate(testDateChoiceID[0]+"examChoice0", driver):
                 print "date 0 added for COLUMBUS"
-            #elif page_source.find("WEST OAK LANE") != -1 and addDate(testDateChoiceID[1]+"examChoice0"):
-            #    print "date 0 added for COLUMBUS"
-            else:
-                print "No available date"
+                site = 'COLUMBUS'
+                register(site, Tel, Email, driver) 
                 sys.exit(0)
-            # Daytime telphone number
-            telNumPart1 = driver.find_element_by_name("telNumPart1"); telNumPart1.send_keys(Tel[0:3])
-            telNumPart2 = driver.find_element_by_name("telNumPart2"); telNumPart2.send_keys(Tel[3:6])
-            telNumPart3 = driver.find_element_by_name("telNumPart3"); telNumPart3.send_keys(Tel[6:])
-            # Email
-            custEmail = driver.find_element_by_name("custEmail")
-            #custEmail.send_keys("co.liang.ol@gmail.com")
-            custEmail.send_keys(Email)
-            #
-            reserveRadio = driver.find_element_by_id("nextPageResrve")
-            reserveRadio.click()
-
-            contBut = driver.find_element_by_name("continueButton"); contBut.click()
-            driver.quit()
-            sys.exit(0)
-
+            elif page_source.find("WEST OAK LANE") != -1 and addDate(testDateChoiceID[1]+"examChoice0", driver):
+                print "date 0 added for West OAK LANE"
+                site = 'WEST OAK LANE'
+                register(site, Tel, Email, driver)
+                sys.exit(0)
+            else:
+                # alert
+                alert_msg = 'No available date'
+                print alert_msg
+                alert_by_mail(alert_msg, 'co.liang.ol@gmail.com')
+                sys.exit(0)
         else:
             print "%s: No exams, sleep!" % (time.asctime())
             time.sleep(check_interval)
 
-def addDate(dateID):
+def register(site, Tel, Email, driver):
+    # Daytime telphone number
+    telNumPart1 = driver.find_element_by_name("telNumPart1"); telNumPart1.send_keys(Tel[0:3])
+    telNumPart2 = driver.find_element_by_name("telNumPart2"); telNumPart2.send_keys(Tel[3:6])
+    telNumPart3 = driver.find_element_by_name("telNumPart3"); telNumPart3.send_keys(Tel[6:])
+    # Email
+    custEmail = driver.find_element_by_name("custEmail")
+    custEmail.send_keys(Email)
+    #
+    reserveRadio = driver.find_element_by_id("nextPageResrve")
+    reserveRadio.click()
+
+    contBut = driver.find_element_by_name("continueButton"); contBut.click()
+    alert_msg = '''Road test registered for %s at %s
+Check online at 'http://www.dot3.state.pa.us/centers/OnlineServicesCenter.shtml'
+    ''' % (site, time.asctime())
+    print alert_msg
+    alert_by_mail(alert_msg, 'co.liang.ol@gmail.com')
+    alert_by_sms(alert_msg, Tel, Email)
+    driver.quit()
+
+def addDate(dateID, driver):
     try:
+        print dateID
         columbusDate0 = driver.find_element_by_id(dateID)
         columbusDate0.click()
     except NoSuchElementException:
@@ -163,7 +174,7 @@ def addDate(dateID):
         return True
 
 def alert_by_mail(alert_msg, Email):
-    from_addr = user
+    from_addr = 'shuang@cis-du02.cis.temple.edu'
     recipients = [Email]
     
     msg = MIMEText(alert_msg)
@@ -181,7 +192,7 @@ def alert_by_mail(alert_msg, Email):
     s.quit()
 
 def alert_by_sms(alert_msg, tel, email):
-    from_addr = 'ubuntu@rungist.com'
+    from_addr = 'shuang@cis-du02.cis.temple.edu'
     attip5 = tel+'@txt.att.net' # @mms.att.net
     recipients = [attip5, email]
     
